@@ -30,8 +30,6 @@ class DefaultController extends Controller
     use ControllerTrait {
         behaviors as behaviorsTrait;
     }
-    
-    public $enableCsrfValidation = false;
 
     public $layout = 'main.twig';
     

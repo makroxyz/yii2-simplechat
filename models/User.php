@@ -67,7 +67,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function beforeSave($insert)
     {
-        $this->created_at = new Expression('UTC_TIMESTAMP()');
+        $this->created_at = date('c');
         return parent::beforeSave($insert);
     }
 
@@ -109,10 +109,10 @@ class User extends ActiveRecord implements IdentityInterface
     /**
      * @return static[]
      */
-    public static function getAll()
-    {
-        return static::find()->with('profile')->all();
-    }
+//    public static function getAll()
+//    {
+//        return static::find()->with('profile')->all();
+//    }
 
 
     /**

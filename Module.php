@@ -4,14 +4,17 @@
  * @copyright Copyright (c) 2015 bubasuma
  * @license http://opensource.org/licenses/BSD-3-Clause
  */
+
 namespace bubasuma\simplechat;
 
+use bubasuma\simplechat\helpers\ClassMapHelper;
+use Yii;
 use yii\base\BootstrapInterface;
 use yii\base\InvalidConfigException;
+use yii\console\Application as Console;
 use yii\db\Connection;
 use yii\di\Instance;
 use yii\web\Application as Web;
-use yii\console\Application as Console;
 
 /**
  * Module extends [[\yii\base\Module]] and represents a message system that stores
@@ -53,8 +56,10 @@ class Module extends \yii\base\Module implements BootstrapInterface
      * @var Connection|array|string the DB connection object or the application component ID of the DB connection.
      */
     public $db = 'db';
-
     public $controllerNamespace = 'bubasuma\simplechat\controllers';
+    public $classMap = [];
+    
+//    public $useModuleTablePrefix = true;
 
     /**
      * Initializes simplechat module.
@@ -65,6 +70,8 @@ class Module extends \yii\base\Module implements BootstrapInterface
     {
         parent::init();
         $this->db = Instance::ensure($this->db, Connection::className());
+        $map = $this->buildClassMap($this->classMap);
+        $this->initContainer($map);
     }
 
     /**
@@ -104,6 +111,100 @@ class Module extends \yii\base\Module implements BootstrapInterface
             ];
         }
     }
+    
+    /**
+     * Initialize container with module classes.
+     *
+     * @param array $map the previously built class map list
+     */
+    protected function initContainer($map)
+    {
+        $di = Yii::$container;
+        try {
+            $modelClassMap = [];
+            foreach ($map as $class => $definition) {
+                $di->set($class, $definition);
+                $model = is_array($definition) ? $definition['class'] : $definition;
+                $name = (substr($class, strrpos($class, '\\') + 1));
+                $modelClassMap[$class] = $model;
+                
+                if (in_array($name, ['Message', 'Conversation'])) {
+                    $di->set(
+                        "bubasuma\\simplechat\\models\\{$name}Query",
+                        function () use ($model) {
+                            return $model::find();
+                        }
+                    );
+                }
+//                if (in_array($name, ['Filemodel'])) {
+//                    $di->set(
+//                        "hal\\mongodb\\filemodels\\models\\{$name}Query",
+//                        function () use ($model) {
+//                            return $model::find();
+//                        }
+//                    );
+//                }
+            }
+            $di->setSingleton(ClassMapHelper::class, ClassMapHelper::class, [$modelClassMap]);
+//            // search classes
+//            if (!$di->has(FilemodelSearch::class)) {
+//                $di->set(FilemodelSearch::class, [$di->get(FilemodelQuery::class)]);
+//            }
+        } catch (Exception $e) {
+            die($e);
+        }
+    }
+    
+    /**
+     * Builds class map according to user configuration.
+     *
+     * @param array $userClassMap user configuration on the module
+     *
+     * @return array
+     */
+    protected function buildClassMap(array $userClassMap)
+    {
+        $map = [];
+        $defaults = [
+            // --- models
+            'Message' => 'bubasuma\simplechat\models\Message',
+            'Conversation' => 'bubasuma\simplechat\models\Conversation',
+            'User' => 'bubasuma\simplechat\models\User',
+            'UserProfile' => 'bubasuma\simplechat\models\UserProfile',
+        ];
+        $routes = [
+            'bubasuma\simplechat\models' => [
+                'Message',
+                'Conversation',
+                'User',
+                'UserProfile'
+            ],
+        ];
+        $mapping = array_merge($defaults, $userClassMap);
+        foreach ($mapping as $name => $definition) {
+            $map[$this->getRoute($routes, $name) . "\\$name"] = $definition;
+        }
+        return $map;
+    }
+    /**
+     * Returns the parent class name route of a short class name.
+     *
+     * @param array  $routes class name routes
+     * @param string $name
+     *
+     * @throws Exception
+     * @return int|string
+     *
+     */
+    protected function getRoute(array $routes, $name)
+    {
+        foreach ($routes as $route => $names) {
+            if (in_array($name, $names)) {
+                return $route;
+            }
+        }
+        throw new Exception("Unknown configuration class name '{$name}'");
+    }
 
     /**
      * @inheritdoc
@@ -113,7 +214,9 @@ class Module extends \yii\base\Module implements BootstrapInterface
         if (!parent::beforeAction($action)) {
             return false;
         }
-        $this->db->tablePrefix = $this->id . '_';
+//        if ($this->useModuleTablePrefix) {
+//            $this->db->tablePrefix = $this->id . '_';
+//        }
         return true;
     }
 }

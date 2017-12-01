@@ -6,10 +6,12 @@
  */
 namespace bubasuma\simplechat\controllers;
 
+use bubasuma\simplechat\ContainerAwareTrait;
 use bubasuma\simplechat\models\Conversation;
 use bubasuma\simplechat\models\Message;
 use bubasuma\simplechat\models\User;
 use bubasuma\simplechat\Module;
+use Yii;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Url;
 use yii\web\Controller;
@@ -27,7 +29,7 @@ use yii\web\NotFoundHttpException;
  */
 class DefaultController extends Controller
 {
-    use ControllerTrait {
+    use ContainerAwareTrait, ControllerTrait {
         behaviors as behaviorsTrait;
     }
 
@@ -70,11 +72,11 @@ class DefaultController extends Controller
         }
 
         if (isset($contactId)) {
-            $current = new Conversation(['user_id' => $user->id, 'contact_id' => $contactId]);
+            $current = $this->make(Conversation::class, ['user_id' => $user->id, 'contact_id' => $contactId]);
         }
 
         /** @var $conversationClass Conversation */
-        $conversationClass = $this->conversationClass;
+        $conversationClass = Conversation::class;
         $conversationDataProvider = $conversationClass::get($user->id, 8);
 
         if (!isset($current)) {
@@ -88,9 +90,9 @@ class DefaultController extends Controller
         if (empty($contact)) {
             throw new NotFoundHttpException();
         }
-        $this->view->title = $contact['name'];
+        $this->view->title = $contact['username'];
         /** @var $messageClass Message */
-        $messageClass = $this->messageClass;
+        $messageClass = Message::class;
         $messageDataProvider = $messageClass::get($user->id, $contact['id'], 10);
         $users = $this->getUsers([$user->id, $contact['id']]);
         return $this->render(
@@ -107,43 +109,29 @@ class DefaultController extends Controller
     }
 
     /**
-     * @return string
-     */
-    public function getMessageClass()
-    {
-        return Message::className();
-    }
-
-    /**
-     * @return string
-     */
-    public function getConversationClass()
-    {
-        return Conversation::className();
-    }
-
-    /**
      * @return User
      */
     public function getUser()
     {
+        $userClass = Yii::createObject(User::class);
         if (null === $this->_user) {
-            $this->_user = User::findIdentity(\Yii::$app->session->get($this->module->id . '_user', 1));
+            $this->_user = $userClass::findIdentity(Yii::$app->session->get($this->module->id . '_user', 1));
         }
         return $this->_user;
     }
 
     public function setUser($userId)
     {
-        \Yii::$app->session->set($this->module->id . '_user', $userId);
+        Yii::$app->session->set($this->module->id . '_user', $userId);
     }
 
     public function getUsers(array $except = [])
     {
         $users = [];
-        foreach (User::getAll() as $userItem) {
+        $userClass = $this->make(User::class);
+        foreach ($userClass::find()->all() as $userItem) {
             $users[] = [
-                'label' => $userItem->name,
+                'label' => $userItem->username,
                 'url' => Url::to(['login-as', 'userId' => $userItem->id]),
                 'options' => ['class' => in_array($userItem->id, $except) ? 'disabled' : ''],
                 'linkOptions' => ['data-method' => 'post'],

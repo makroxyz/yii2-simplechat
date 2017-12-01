@@ -9,11 +9,12 @@ namespace bubasuma\simplechat\controllers;
 use bubasuma\simplechat\DataProvider;
 use bubasuma\simplechat\db\Conversation;
 use bubasuma\simplechat\db\Message;
+use Yii;
 use yii\base\NotSupportedException;
 use yii\filters\ContentNegotiator;
+use yii\web\ForbiddenHttpException;
 use yii\web\IdentityInterface;
 use yii\web\Response;
-use yii\web\ForbiddenHttpException;
 
 /**
  * Trait DefaultController
@@ -63,25 +64,22 @@ trait ControllerTrait
     public function actionConversations()
     {
         $userId = $this->user->getId();
-        $request = \Yii::$app->request;
+        $request = Yii::$app->request;
         $limit = $request->get('limit', $request->post('limit'));
         $key = $request->get('key', $request->post('key'));
         $history = strcmp('new', $request->get('type', $request->post('type')));
         /** @var $conversationClass Conversation */
-        $conversationClass = $this->conversationClass;
-        return $conversationClass::get($userId, $limit, $history, $key);
+        return Conversation::get($userId, $limit, $history, $key);
     }
 
     public function actionMessages($contactId)
     {
         $userId = $this->user->getId();
-        $request = \Yii::$app->request;
+        $request = Yii::$app->request;
         $limit = $request->get('limit', $request->post('limit'));
         $key = $request->get('key', $request->post('key'));
         $history = strcmp('new', $request->get('type', $request->post('type')));
-        /** @var $messageClass Message */
-        $messageClass = $this->messageClass;
-        return $messageClass::get($userId, $contactId, $limit, $history, $key);
+        return Message::get($userId, $contactId, $limit, $history, $key);
     }
 
     public function actionCreateMessage($contactId)
@@ -90,10 +88,8 @@ trait ControllerTrait
         if ($userId == $contactId) {
             throw new ForbiddenHttpException('You cannot send a message in this conversation');
         }
-        $text = \Yii::$app->request->post('text');
-        /** @var $messageClass Message */
-        $messageClass = $this->messageClass;
-        return $messageClass::create($userId, $contactId, $text);
+        $text = Yii::$app->request->post('text');
+        return Message::create($userId, $contactId, $text);
     }
 
     public function actionDeleteMessage($id)
@@ -104,25 +100,19 @@ trait ControllerTrait
     public function actionDeleteConversation($contactId)
     {
         $userId = $this->user->getId();
-        /** @var $conversationClass Conversation */
-        $conversationClass = $this->conversationClass;
-        return $conversationClass::remove($userId, $contactId);
+        return Conversation::remove($userId, $contactId);
     }
 
     public function actionMarkConversationAsRead($contactId)
     {
         $userId = $this->user->getId();
-        /** @var $conversationClass Conversation */
-        $conversationClass = $this->conversationClass;
-        return $conversationClass::read($userId, $contactId);
+        return Conversation::read($userId, $contactId);
     }
 
     public function actionMarkConversationAsUnread($contactId)
     {
         $userId = $this->user->getId();
-        /** @var $conversationClass Conversation */
-        $conversationClass = $this->conversationClass;
-        return $conversationClass::unread($userId, $contactId);
+        return Conversation::unread($userId, $contactId);
     }
 
     /**
@@ -130,22 +120,6 @@ trait ControllerTrait
      */
     public function getUser()
     {
-        return \Yii::$app->user->identity;
-    }
-
-    /**
-     * @return string
-     */
-    public function getMessageClass()
-    {
-        return Message::className();
-    }
-
-    /**
-     * @return string
-     */
-    public function getConversationClass()
-    {
-        return Conversation::className();
+        return Yii::$app->user->identity;
     }
 }

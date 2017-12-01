@@ -9,8 +9,8 @@ namespace bubasuma\simplechat\db;
 use bubasuma\simplechat\DataProvider;
 use bubasuma\simplechat\migrations\Migration;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\db\ActiveRecord;
-use yii\db\Expression;
 use yii\helpers\Html;
 
 /**
@@ -104,7 +104,7 @@ class Message extends ActiveRecord
 
     /**
      * @return MessageQuery
-     * @throws \yii\base\InvalidConfigException
+     * @throws InvalidConfigException
      */
     public static function find()
     {

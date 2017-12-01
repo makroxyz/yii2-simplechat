@@ -7,6 +7,8 @@
 
 namespace bubasuma\simplechat\models;
 
+use bubasuma\simplechat\ContainerAwareTrait;
+use Yii;
 use yii\db\ActiveQuery;
 use yii\helpers\StringHelper;
 use yii\helpers\Url;
@@ -22,12 +24,14 @@ use yii\helpers\Url;
  */
 class Conversation extends \bubasuma\simplechat\db\Conversation
 {
+    use ContainerAwareTrait;
+    
     /**
      * @return ActiveQuery
      */
     public function getContact()
     {
-        return $this->hasOne(User::className(), ['id' => 'contact_id']);
+        return $this->hasOne($this->getClassMap()->get(User::class), ['id' => 'contact_id']);
     }
 
     /**
@@ -72,15 +76,15 @@ class Conversation extends \bubasuma\simplechat\db\Conversation
         $today = date_create()->setTime(0, 0, 0);
         $date = date_create($value)->setTime(0, 0, 0);
         if ($today == $date) {
-            $formatted = \Yii::$app->formatter->asTime($value, 'short');
+            $formatted = Yii::$app->formatter->asTime($value, 'short');
         } elseif ($today->getTimestamp() - $date->getTimestamp() == 24 * 60 * 60) {
             $formatted = 'Yesterday';
         } elseif ($today->format('W') == $date->format('W') && $today->format('Y') == $date->format('Y')) {
-            $formatted = \Yii::$app->formatter->asDate($value, 'php:l');
+            $formatted = Yii::$app->formatter->asDate($value, 'php:l');
         } elseif ($today->format('Y') == $date->format('Y')) {
-            $formatted = \Yii::$app->formatter->asDate($value, 'php:d F');
+            $formatted = Yii::$app->formatter->asDate($value, 'php:d F');
         } else {
-            $formatted = \Yii::$app->formatter->asDate($value, 'medium');
+            $formatted = Yii::$app->formatter->asDate($value, 'medium');
         }
         return $formatted;
     }

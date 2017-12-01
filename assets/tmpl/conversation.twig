@@ -3,11 +3,11 @@
      data-unreadurl="{{ model.unreadUrl }}" data-readurl="{{ model.readUrl }}" data-deleteurl="{{ model.deleteUrl }}"
      data-loadurl="{{ model.loadUrl }}" data-sendurl="{{ model.sendUrl }}">
     <a class="pull-left" href="#">
-        <img class="media-object" alt="{{ model.contact.name }}" style="width: 50px; height: 50px;" src="{{ settings.baseUrl }}/img/avatars/{{ model.contact.avatar }}"/>
+        <img class="media-object" alt="{{ model.contact.username }}" style="width: 50px; height: 50px;" src="{{ settings.baseUrl }}/img/avatars/{{ model.contact.avatar }}"/>
     </a>
     <div class="media-body">
         <small class="pull-right time"> {{ model.lastMessage.date }}</small>
-        <h5 class="media-heading">{{ model.contact.name }}</h5>
+        <h5 class="media-heading">{{ model.contact.username }}</h5>
         <small>{{ model.contact.id != model.lastMessage.senderId ? '<i class="fa fa-reply"></i>' : '' }} {{ model.lastMessage.text|raw }}</small>
         <span class="badge pull-right msg-new">{{ model.newMessages.count > 0 ? model.newMessages.count : '' }}</span>
         <ul class="pull-right list-inline">
